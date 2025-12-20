@@ -5,6 +5,7 @@ import {
   MangaItem, 
   MangaDetail, 
   ChapterData,
+  ChapterAPIResponse,
   PaginatedResponse 
 } from '@/types/manga';
 
@@ -94,7 +95,16 @@ export async function getMangaDetail(slug: string): Promise<MangaDetail> {
 
 // Read chapter
 export async function getChapter(slug: string): Promise<ChapterData> {
-  return fetchAPI<ChapterData>(`/chapter/${slug}`);
+  const response = await fetchAPI<ChapterAPIResponse>(`/chapter/${slug}`);
+  
+  // Transform API response to our ChapterData format
+  return {
+    title: response.title || slug.replace(/-/g, ' ').replace(/bahasa indonesia/gi, '').trim(),
+    images: response.images,
+    prevChapter: response.navigation?.prev || undefined,
+    nextChapter: response.navigation?.next || undefined,
+    mangaSlug: response.comicSlug
+  };
 }
 
 // Helper to clean chapter title (removes newlines)

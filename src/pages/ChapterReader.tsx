@@ -137,13 +137,17 @@ const ChapterReader = () => {
         onClick={() => setShowControls(!showControls)}
       >
         <div className="max-w-4xl mx-auto">
-          {chapter.images.map((img, index) => (
+          {chapter.images.map((imageUrl, index) => (
             <img
               key={index}
-              src={img.image}
+              src={imageUrl}
               alt={`Page ${index + 1}`}
               className="w-full h-auto"
               loading="lazy"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+              }}
             />
           ))}
         </div>

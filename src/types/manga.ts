@@ -47,14 +47,22 @@ export interface MangaDetail {
   chapters: ChapterInfo[];
 }
 
-export interface ChapterImage {
-  image: string;
-  index: number;
+export interface ChapterNavigation {
+  prev?: string;
+  next?: string;
+  allChapters?: string;
+}
+
+export interface ChapterAPIResponse {
+  title: string;
+  comicSlug: string;
+  images: string[];
+  navigation: ChapterNavigation;
 }
 
 export interface ChapterData {
   title: string;
-  images: ChapterImage[];
+  images: string[];
   prevChapter?: string;
   nextChapter?: string;
   mangaSlug?: string;
