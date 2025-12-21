@@ -3,7 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Navbar } from "@/components/Navbar";
 import Index from "./pages/Index";
 import Browse from "./pages/Browse";
@@ -13,14 +13,12 @@ import Search from "./pages/Search";
 import MangaDetail from "./pages/MangaDetail";
 import ChapterReader from "./pages/ChapterReader";
 import Auth from "./pages/Auth";
-import Bookmarks from "./pages/Bookmarks";
 import History from "./pages/History";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
 const App = () => {
-  // Placeholder for user state - will be connected to Supabase auth
   const [user, setUser] = useState<{ email: string } | null>(null);
 
   const handleLogout = () => {
@@ -43,9 +41,7 @@ const App = () => {
             <Route path="/manga/:slug" element={<MangaDetail />} />
             <Route path="/chapter/:slug" element={<ChapterReader />} />
             <Route path="/auth" element={<Auth />} />
-            <Route path="/bookmarks" element={<Bookmarks />} />
             <Route path="/history" element={<History />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
