@@ -1,13 +1,18 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Home, List, Settings, Maximize, Minimize } from 'lucide-react';
-import { getChapter } from '@/lib/api';
+import { ChevronLeft, ChevronRight, Home, List, Maximize, Minimize } from 'lucide-react';
+import { getChapter, getMangaDetail } from '@/lib/api';
 import { ChapterData } from '@/types/manga';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/hooks/useAuth';
+import { useReadingHistory } from '@/hooks/useReadingHistory';
 
 const ChapterReader = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { addToHistory } = useReadingHistory();
+  
   const [chapter, setChapter] = useState<ChapterData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -23,6 +28,23 @@ const ChapterReader = () => {
       try {
         const data = await getChapter(slug);
         setChapter(data);
+
+        // Add to reading history if user is logged in
+        if (user && data.mangaSlug) {
+          try {
+            const mangaDetail = await getMangaDetail(data.mangaSlug);
+            addToHistory(
+              data.mangaSlug,
+              mangaDetail.title,
+              slug,
+              data.title,
+              mangaDetail.image
+            );
+          } catch (err) {
+            // Silently fail - history is not critical
+            console.error('Failed to add to history:', err);
+          }
+        }
       } catch (err) {
         setError('Failed to load chapter. Please try again later.');
         console.error(err);
@@ -32,7 +54,7 @@ const ChapterReader = () => {
     };
 
     fetchChapter();
-  }, [slug]);
+  }, [slug, user]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -118,14 +140,6 @@ const ChapterReader = () => {
               className="p-2"
             >
               {isFullscreen ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowControls(!showControls)}
-              className="p-2"
-            >
-              <Settings className="w-5 h-5" />
             </Button>
           </div>
         </div>

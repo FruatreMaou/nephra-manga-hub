@@ -14,7 +14,90 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      bookmarks: {
+        Row: {
+          created_at: string
+          id: string
+          manga_cover: string | null
+          manga_slug: string
+          manga_title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          manga_cover?: string | null
+          manga_slug: string
+          manga_title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          manga_cover?: string | null
+          manga_slug?: string
+          manga_title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+          username?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+          username?: string
+        }
+        Relationships: []
+      }
+      reading_history: {
+        Row: {
+          chapter_slug: string
+          chapter_title: string
+          id: string
+          manga_cover: string | null
+          manga_slug: string
+          manga_title: string
+          read_at: string
+          user_id: string
+        }
+        Insert: {
+          chapter_slug: string
+          chapter_title: string
+          id?: string
+          manga_cover?: string | null
+          manga_slug: string
+          manga_title: string
+          read_at?: string
+          user_id: string
+        }
+        Update: {
+          chapter_slug?: string
+          chapter_title?: string
+          id?: string
+          manga_cover?: string | null
+          manga_slug?: string
+          manga_title?: string
+          read_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
