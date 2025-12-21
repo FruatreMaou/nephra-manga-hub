@@ -5,13 +5,19 @@ import { getMangaDetail, getTypeBadgeClass, cleanChapterTitle } from '@/lib/api'
 import { MangaDetail as MangaDetailType } from '@/types/manga';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/hooks/useAuth';
+import { useBookmarks } from '@/hooks/useBookmarks';
+import { useToast } from '@/hooks/use-toast';
 
 const MangaDetail = () => {
   const { slug } = useParams<{ slug: string }>();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const { isBookmarked, addBookmark, removeBookmark } = useBookmarks();
+  
   const [manga, setManga] = useState<MangaDetailType | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isBookmarked, setIsBookmarked] = useState(false);
   const [showAllChapters, setShowAllChapters] = useState(false);
 
   useEffect(() => {
@@ -33,6 +39,29 @@ const MangaDetail = () => {
 
     fetchManga();
   }, [slug]);
+
+  const handleBookmarkToggle = async () => {
+    if (!user) {
+      toast({
+        title: 'Login Required',
+        description: 'Please login to bookmark manga',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!manga || !slug) return;
+
+    if (isBookmarked(slug)) {
+      await removeBookmark(slug);
+      toast({
+        title: 'Removed',
+        description: 'Removed from bookmarks',
+      });
+    } else {
+      await addBookmark(slug, manga.title, manga.image);
+    }
+  };
 
   const displayedChapters = showAllChapters 
     ? manga?.chapters 
@@ -69,6 +98,8 @@ const MangaDetail = () => {
       </div>
     );
   }
+
+  const bookmarked = slug ? isBookmarked(slug) : false;
 
   return (
     <div className="min-h-screen pt-20">
@@ -188,10 +219,10 @@ const MangaDetail = () => {
                 )}
                 <Button
                   variant="outline"
-                  onClick={() => setIsBookmarked(!isBookmarked)}
-                  className={isBookmarked ? 'border-primary text-primary' : ''}
+                  onClick={handleBookmarkToggle}
+                  className={bookmarked ? 'border-primary text-primary' : ''}
                 >
-                  {isBookmarked ? (
+                  {bookmarked ? (
                     <>
                       <BookmarkCheck className="w-4 h-4 mr-2" />
                       Bookmarked
