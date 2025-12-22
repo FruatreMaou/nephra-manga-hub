@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { User, BookmarkIcon, Clock, Edit2, Check, X, Trash2, LogOut } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { useBookmarks, Bookmark } from '@/hooks/useBookmarks';
+import { useBookmarks } from '@/hooks/useBookmarks';
 import { useReadingHistory } from '@/hooks/useReadingHistory';
 import { SectionHeader } from '@/components/SectionHeader';
 import { Footer } from '@/components/Footer';
@@ -15,7 +15,7 @@ import { formatDistanceToNow } from 'date-fns';
 const Profile = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, profile, loading: authLoading, signOut, updateUsername } = useAuth();
+  const { user, profile, signOut, updateUsername } = useAuth();
   const { bookmarks, loading: bookmarksLoading, removeBookmark, removeMultipleBookmarks, removeAllBookmarks } = useBookmarks();
   const { history, loading: historyLoading } = useReadingHistory();
 
@@ -23,12 +23,6 @@ const Profile = () => {
   const [newUsername, setNewUsername] = useState('');
   const [selectedBookmarks, setSelectedBookmarks] = useState<string[]>([]);
   const [savingUsername, setSavingUsername] = useState(false);
-
-  useEffect(() => {
-    if (!authLoading && !user) {
-      navigate('/auth');
-    }
-  }, [user, authLoading, navigate]);
 
   useEffect(() => {
     if (profile) {
@@ -94,19 +88,6 @@ const Profile = () => {
     await signOut();
     navigate('/');
   };
-
-  if (authLoading) {
-    return (
-      <div className="min-h-screen pt-20 flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  if (!user) {
-    return null;
-  }
-
   return (
     <div className="min-h-screen pt-20">
       <div className="stars-bg" />

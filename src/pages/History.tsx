@@ -1,36 +1,13 @@
-import { useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Clock, Trash2 } from 'lucide-react';
 import { SectionHeader } from '@/components/SectionHeader';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/hooks/useAuth';
 import { useReadingHistory } from '@/hooks/useReadingHistory';
 import { formatDistanceToNow } from 'date-fns';
 
 const History = () => {
-  const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
   const { history, loading: historyLoading, removeFromHistory, clearHistory } = useReadingHistory();
-
-  useEffect(() => {
-    if (!authLoading && !user) {
-      navigate('/auth');
-    }
-  }, [user, authLoading, navigate]);
-
-  if (authLoading) {
-    return (
-      <div className="min-h-screen pt-20 flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  if (!user) {
-    return null;
-  }
-
   return (
     <div className="min-h-screen pt-20">
       <div className="stars-bg" />
