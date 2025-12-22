@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Navbar } from "@/components/Navbar";
 import Index from "./pages/Index";
 import Browse from "./pages/Browse";
@@ -37,8 +38,8 @@ const App = () => {
               <Route path="/manga/:slug" element={<MangaDetail />} />
               <Route path="/chapter/:slug" element={<ChapterReader />} />
               <Route path="/auth" element={<Auth />} />
-              <Route path="/history" element={<History />} />
-              <Route path="/profile" element={<Profile />} />
+              <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
+              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
