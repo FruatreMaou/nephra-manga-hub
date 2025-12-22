@@ -10,13 +10,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useAuth } from '@/hooks/useAuth';
 
-interface NavbarProps {
-  user: { email: string } | null;
-  onLogout: () => void;
-}
-
-export const Navbar = ({ user, onLogout }: NavbarProps) => {
+export const Navbar = () => {
+  const { user, profile, signOut, loading } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -40,6 +37,11 @@ export const Navbar = ({ user, onLogout }: NavbarProps) => {
       setSearchQuery('');
       setIsMenuOpen(false);
     }
+  };
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate('/');
   };
 
   useEffect(() => {
@@ -132,7 +134,7 @@ export const Navbar = ({ user, onLogout }: NavbarProps) => {
             </div>
 
             {/* User Menu */}
-            {user ? (
+            {!loading && user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button 
@@ -145,22 +147,30 @@ export const Navbar = ({ user, onLogout }: NavbarProps) => {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48 glass">
                   <div className="px-3 py-2">
-                    <p className="text-sm font-medium truncate">{user.email}</p>
+                    <p className="text-sm font-medium truncate">{profile?.username || 'user'}</p>
+                    <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                   </div>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={onLogout} className="text-destructive focus:text-destructive">
+                  <DropdownMenuItem asChild>
+                    <Link to="/profile" className="cursor-pointer">
+                      <User className="w-4 h-4 mr-2" />
+                      Profile
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
                     <LogOut className="w-4 h-4 mr-2" />
                     Logout
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            ) : (
+            ) : !loading ? (
               <Link to="/auth">
                 <Button size="sm" className="btn-primary">
                   Sign In
                 </Button>
               </Link>
-            )}
+            ) : null}
           </div>
 
           {/* Mobile Menu Button */}
@@ -235,20 +245,29 @@ export const Navbar = ({ user, onLogout }: NavbarProps) => {
           <div className="h-px bg-border/50 my-2" />
 
           {/* Mobile Auth */}
-          {user ? (
+          {!loading && user ? (
             <div className="px-4 py-3">
-              <p className="text-sm text-muted-foreground mb-2">{user.email}</p>
-              <Button 
-                onClick={() => { onLogout(); setIsMenuOpen(false); }}
-                variant="outline"
-                size="sm"
-                className="w-full text-destructive border-destructive/30 hover:bg-destructive/10"
-              >
-                <LogOut className="w-4 h-4 mr-2" />
-                Logout
-              </Button>
+              <p className="text-sm font-medium">{profile?.username || 'user'}</p>
+              <p className="text-xs text-muted-foreground mb-3">{user.email}</p>
+              <div className="space-y-2">
+                <Link to="/profile" onClick={() => setIsMenuOpen(false)}>
+                  <Button variant="outline" size="sm" className="w-full">
+                    <User className="w-4 h-4 mr-2" />
+                    Profile
+                  </Button>
+                </Link>
+                <Button 
+                  onClick={() => { handleLogout(); setIsMenuOpen(false); }}
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-destructive border-destructive/30 hover:bg-destructive/10"
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Logout
+                </Button>
+              </div>
             </div>
-          ) : (
+          ) : !loading ? (
             <Link 
               to="/auth" 
               onClick={() => setIsMenuOpen(false)}
@@ -258,7 +277,7 @@ export const Navbar = ({ user, onLogout }: NavbarProps) => {
                 Sign In
               </Button>
             </Link>
-          )}
+          ) : null}
         </div>
       </div>
     </nav>
