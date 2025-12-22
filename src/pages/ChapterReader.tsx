@@ -1,11 +1,19 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Home, List, Maximize, Minimize } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Home, List, Maximize, Minimize, BookOpen, ArrowLeft } from 'lucide-react';
 import { getChapter, getMangaDetail } from '@/lib/api';
-import { ChapterData } from '@/types/manga';
+import { ChapterData, ChapterInfo, MangaDetail } from '@/types/manga';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useReadingHistory } from '@/hooks/useReadingHistory';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const ChapterReader = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -14,10 +22,12 @@ const ChapterReader = () => {
   const { addToHistory } = useReadingHistory();
   
   const [chapter, setChapter] = useState<ChapterData | null>(null);
+  const [mangaDetail, setMangaDetail] = useState<MangaDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(true);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   useEffect(() => {
     const fetchChapter = async () => {
@@ -29,20 +39,24 @@ const ChapterReader = () => {
         const data = await getChapter(slug);
         setChapter(data);
 
-        // Add to reading history if user is logged in
-        if (user && data.mangaSlug) {
+        // Fetch manga detail for chapter list
+        if (data.mangaSlug) {
           try {
-            const mangaDetail = await getMangaDetail(data.mangaSlug);
-            addToHistory(
-              data.mangaSlug,
-              mangaDetail.title,
-              slug,
-              data.title,
-              mangaDetail.image
-            );
+            const detail = await getMangaDetail(data.mangaSlug);
+            setMangaDetail(detail);
+            
+            // Add to reading history if user is logged in
+            if (user) {
+              addToHistory(
+                data.mangaSlug,
+                detail.title,
+                slug,
+                data.title,
+                detail.image
+              );
+            }
           } catch (err) {
-            // Silently fail - history is not critical
-            console.error('Failed to add to history:', err);
+            console.error('Failed to fetch manga detail:', err);
           }
         }
       } catch (err) {
@@ -118,14 +132,59 @@ const ChapterReader = () => {
             <Link to="/" className="p-2 rounded-lg hover:bg-muted/50 transition-colors">
               <Home className="w-5 h-5" />
             </Link>
-            {chapter.mangaSlug && (
-              <Link 
-                to={`/manga/${chapter.mangaSlug}`}
-                className="p-2 rounded-lg hover:bg-muted/50 transition-colors"
-              >
-                <List className="w-5 h-5" />
-              </Link>
-            )}
+            <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+              <SheetTrigger asChild>
+                <button className="p-2 rounded-lg hover:bg-muted/50 transition-colors">
+                  <List className="w-5 h-5" />
+                </button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-80 p-0">
+                <SheetHeader className="p-4 border-b border-border">
+                  <SheetTitle className="text-left">Chapters</SheetTitle>
+                </SheetHeader>
+                
+                {/* Back to Detail Link */}
+                {chapter.mangaSlug && (
+                  <Link 
+                    to={`/manga/${chapter.mangaSlug}`}
+                    className="flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors border-b border-border"
+                    onClick={() => setSheetOpen(false)}
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    <span className="font-medium">Back to Detail</span>
+                  </Link>
+                )}
+                
+                {/* Chapter List */}
+                <ScrollArea className="h-[calc(100vh-120px)]">
+                  <div className="p-2">
+                    {mangaDetail?.chapters.map((ch) => (
+                      <Link
+                        key={ch.slug}
+                        to={`/chapter/${ch.slug}`}
+                        onClick={() => setSheetOpen(false)}
+                        className={`block px-3 py-2 rounded-lg transition-colors ${
+                          ch.slug === slug 
+                            ? 'bg-primary text-primary-foreground' 
+                            : 'hover:bg-muted/50'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <BookOpen className="w-4 h-4 flex-shrink-0" />
+                          <span className="text-sm truncate">{ch.title}</span>
+                        </div>
+                        {ch.date && (
+                          <span className="text-xs text-muted-foreground ml-6">{ch.date}</span>
+                        )}
+                      </Link>
+                    ))}
+                    {!mangaDetail && (
+                      <p className="text-sm text-muted-foreground text-center py-4">Loading chapters...</p>
+                    )}
+                  </div>
+                </ScrollArea>
+              </SheetContent>
+            </Sheet>
           </div>
 
           <h1 className="font-display text-sm md:text-base font-semibold truncate max-w-xs md:max-w-md">
