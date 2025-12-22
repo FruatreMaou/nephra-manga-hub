@@ -55,7 +55,7 @@ export async function getLatestReleases(page: number = 1): Promise<PaginatedResp
 
 // Popular manga with pagination
 export async function getPopularManga(page: number = 1): Promise<PaginatedResponse<MangaItem>> {
-  return fetchPaginatedAPI<MangaItem>(`/populer/${page}`);
+  return fetchPaginatedAPI<MangaItem>(`/popular/${page}`);
 }
 
 // Completed manga with pagination
