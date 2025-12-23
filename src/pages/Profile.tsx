@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, BookmarkIcon, Clock, Edit2, Check, X, Trash2, LogOut } from 'lucide-react';
+import { User, BookmarkIcon, Clock, Edit2, Check, X, Trash2, LogOut, Palette } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useBookmarks } from '@/hooks/useBookmarks';
 import { useReadingHistory } from '@/hooks/useReadingHistory';
 import { SectionHeader } from '@/components/SectionHeader';
 import { Footer } from '@/components/Footer';
+import { ThemeSelector } from '@/components/ThemeSelector';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -88,11 +89,12 @@ const Profile = () => {
     await signOut();
     navigate('/');
   };
+
   return (
     <div className="min-h-screen pt-20">
-      <div className="stars-bg" />
+      <div className="page-pattern" />
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 relative z-10">
         {/* Profile Header */}
         <div className="glass-card rounded-2xl p-6 mb-8">
           <div className="flex items-center gap-4">
@@ -147,6 +149,15 @@ const Profile = () => {
               Logout
             </Button>
           </div>
+        </div>
+
+        {/* Theme Selection Section */}
+        <div className="glass-card rounded-2xl p-6 mb-8">
+          <SectionHeader
+            title="Appearance"
+            icon={<Palette className="w-5 h-5" />}
+          />
+          <ThemeSelector />
         </div>
 
         {/* Bookmarks Section */}

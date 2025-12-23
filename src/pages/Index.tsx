@@ -31,11 +31,18 @@ const Index = () => {
 
   return (
     <div className="min-h-screen pt-20">
-      {/* Stars background */}
-      <div className="stars-bg" />
+      {/* Background pattern */}
+      <div className="page-pattern" />
 
       {/* Hero Section */}
-      <section className="relative py-16 md:py-24 overflow-hidden">
+      <section className="hero-section relative py-16 md:py-24 overflow-hidden">
+        {/* Theme-adaptive hero background */}
+        <div className="hero-bg">
+          <div className="hero-glow w-64 h-64 -top-20 -left-20" />
+          <div className="hero-glow w-80 h-80 -bottom-20 -right-20" style={{ animationDelay: '2s' }} />
+          <div className="hero-glow w-40 h-40 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" style={{ animationDelay: '1s' }} />
+        </div>
+
         <div className="container mx-auto px-4 relative z-10">
           <div className="text-center max-w-3xl mx-auto">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-6 animate-fade-in">
@@ -69,14 +76,10 @@ const Index = () => {
             </div>
           </div>
         </div>
-
-        {/* Decorative elements */}
-        <div className="absolute top-1/4 left-10 w-32 h-32 bg-primary/20 rounded-full blur-3xl animate-float" />
-        <div className="absolute bottom-1/4 right-10 w-40 h-40 bg-accent/20 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }} />
       </section>
 
       {/* Hot Updates Section */}
-      <section className="py-12">
+      <section className="py-12 relative z-10">
         <div className="container mx-auto px-4">
           <SectionHeader 
             title="Hot Updates" 
@@ -99,7 +102,7 @@ const Index = () => {
       </section>
 
       {/* Project Updates Section */}
-      <section className="py-12">
+      <section className="py-12 relative z-10">
         <div className="container mx-auto px-4">
           <SectionHeader 
             title="Project Updates" 
@@ -118,7 +121,7 @@ const Index = () => {
       </section>
 
       {/* Latest Releases Section */}
-      <section className="py-12">
+      <section className="py-12 relative z-10">
         <div className="container mx-auto px-4">
           <SectionHeader 
             title="Latest Releases" 
