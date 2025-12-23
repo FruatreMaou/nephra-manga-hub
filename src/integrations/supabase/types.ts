@@ -70,30 +70,36 @@ export type Database = {
           chapter_slug: string
           chapter_title: string
           id: string
+          last_image_index: number | null
           manga_cover: string | null
           manga_slug: string
           manga_title: string
           read_at: string
+          scroll_progress: number | null
           user_id: string
         }
         Insert: {
           chapter_slug: string
           chapter_title: string
           id?: string
+          last_image_index?: number | null
           manga_cover?: string | null
           manga_slug: string
           manga_title: string
           read_at?: string
+          scroll_progress?: number | null
           user_id: string
         }
         Update: {
           chapter_slug?: string
           chapter_title?: string
           id?: string
+          last_image_index?: number | null
           manga_cover?: string | null
           manga_slug?: string
           manga_title?: string
           read_at?: string
+          scroll_progress?: number | null
           user_id?: string
         }
         Relationships: []

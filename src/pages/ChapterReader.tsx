@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Home, List, Maximize, Minimize, BookOpen, ArrowLeft } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Home, List, Maximize, Minimize, BookOpen, ArrowLeft, RotateCcw } from 'lucide-react';
 import { getChapter, getMangaDetail } from '@/lib/api';
-import { ChapterData, ChapterInfo, MangaDetail } from '@/types/manga';
+import { ChapterData, MangaDetail } from '@/types/manga';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useReadingHistory } from '@/hooks/useReadingHistory';
+import { useReadingProgress } from '@/hooks/useReadingProgress';
 import {
   Sheet,
   SheetContent,
@@ -20,6 +21,7 @@ const ChapterReader = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { addToHistory } = useReadingHistory();
+  const { progress, isResuming, saveProgress, clearResuming } = useReadingProgress(slug || '');
   
   const [chapter, setChapter] = useState<ChapterData | null>(null);
   const [mangaDetail, setMangaDetail] = useState<MangaDetail | null>(null);
@@ -28,6 +30,20 @@ const ChapterReader = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const [showResumeIndicator, setShowResumeIndicator] = useState(false);
+  
+  const contentRef = useRef<HTMLDivElement>(null);
+  const hasScrolledToProgress = useRef(false);
+  const imagesLoadedCount = useRef(0);
+
+  // Scroll to top on chapter change
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    hasScrolledToProgress.current = false;
+    imagesLoadedCount.current = 0;
+    setScrollProgress(0);
+  }, [slug]);
 
   useEffect(() => {
     const fetchChapter = async () => {
@@ -69,6 +85,61 @@ const ChapterReader = () => {
 
     fetchChapter();
   }, [slug, user]);
+
+  // Handle scroll progress tracking
+  const handleScroll = useCallback(() => {
+    const scrollTop = window.scrollY;
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+    setScrollProgress(progress);
+
+    // Find the last visible image index
+    if (contentRef.current && chapter) {
+      const images = contentRef.current.querySelectorAll('img');
+      let lastVisibleIndex = 0;
+      
+      images.forEach((img, index) => {
+        const rect = img.getBoundingClientRect();
+        if (rect.top < window.innerHeight / 2) {
+          lastVisibleIndex = index;
+        }
+      });
+
+      // Save progress
+      saveProgress(progress, lastVisibleIndex);
+    }
+  }, [chapter, saveProgress]);
+
+  useEffect(() => {
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [handleScroll]);
+
+  // Resume reading from saved position
+  const resumeReading = useCallback(() => {
+    if (progress && progress.scrollProgress > 5) {
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const scrollTo = (progress.scrollProgress / 100) * docHeight;
+      window.scrollTo({ top: scrollTo, behavior: 'smooth' });
+      setShowResumeIndicator(false);
+      clearResuming();
+    }
+  }, [progress, clearResuming]);
+
+  // Show resume indicator when there's saved progress
+  useEffect(() => {
+    if (isResuming && progress && progress.scrollProgress > 5 && !hasScrolledToProgress.current) {
+      setShowResumeIndicator(true);
+      hasScrolledToProgress.current = true;
+      
+      // Auto-hide after 5 seconds
+      const timeout = setTimeout(() => {
+        setShowResumeIndicator(false);
+      }, 5000);
+      
+      return () => clearTimeout(timeout);
+    }
+  }, [isResuming, progress]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -121,9 +192,29 @@ const ChapterReader = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Progress bar */}
+      <div 
+        className="progress-indicator"
+        style={{ width: `${scrollProgress}%` }}
+      />
+
+      {/* Resume indicator */}
+      {showResumeIndicator && (
+        <div className="resume-indicator flex items-center gap-3">
+          <span className="text-sm">Continue from {Math.round(progress?.scrollProgress || 0)}%?</span>
+          <Button size="sm" variant="default" onClick={resumeReading}>
+            <RotateCcw className="w-3 h-3 mr-1" />
+            Resume
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => setShowResumeIndicator(false)}>
+            Dismiss
+          </Button>
+        </div>
+      )}
+
       {/* Top Navigation */}
       <div 
-        className={`fixed top-0 left-0 right-0 z-50 glass border-b border-border/50 transition-transform duration-300 ${
+        className={`fixed top-0 left-0 right-0 z-40 glass border-b border-border/50 transition-transform duration-300 ${
           showControls ? 'translate-y-0' : '-translate-y-full'
         }`}
       >
@@ -206,6 +297,7 @@ const ChapterReader = () => {
 
       {/* Chapter Images */}
       <div 
+        ref={contentRef}
         className="pt-20 pb-20"
         onClick={() => setShowControls(!showControls)}
       >
@@ -217,6 +309,9 @@ const ChapterReader = () => {
               alt={`Page ${index + 1}`}
               className="w-full h-auto"
               loading="lazy"
+              onLoad={() => {
+                imagesLoadedCount.current++;
+              }}
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.style.display = 'none';
@@ -228,7 +323,7 @@ const ChapterReader = () => {
 
       {/* Bottom Navigation */}
       <div 
-        className={`fixed bottom-0 left-0 right-0 z-50 glass border-t border-border/50 transition-transform duration-300 ${
+        className={`fixed bottom-0 left-0 right-0 z-40 glass border-t border-border/50 transition-transform duration-300 ${
           showControls ? 'translate-y-0' : 'translate-y-full'
         }`}
       >
@@ -248,7 +343,7 @@ const ChapterReader = () => {
           )}
 
           <span className="text-sm text-muted-foreground">
-            Use ← → arrow keys to navigate
+            {Math.round(scrollProgress)}% read
           </span>
 
           {chapter.nextChapter ? (
