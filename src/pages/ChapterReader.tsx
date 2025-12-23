@@ -211,28 +211,6 @@ const ChapterReader = () => {
           </Button>
         </div>
       )}
-
-      {/* Top Navigation */}
-      <div 
-        className={`fixed top-0 left-0 right-0 z-40 glass border-b border-border/50 transition-transform duration-300 ${
-          showControls ? 'translate-y-0' : '-translate-y-full'
-        }`}
-      >
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link to="/" className="p-2 rounded-lg hover:bg-muted/50 transition-colors">
-              <Home className="w-5 h-5" />
-            </Link>
-            <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-              <SheetTrigger asChild>
-                <button className="p-2 rounded-lg hover:bg-muted/50 transition-colors">
-                  <List className="w-5 h-5" />
-                </button>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-80 p-0">
-                <SheetHeader className="p-4 border-b border-border">
-                  <SheetTitle className="text-left">Chapters</SheetTitle>
-                </SheetHeader>
                 
                 {/* Back to Detail Link */}
                 {chapter.mangaSlug && (
