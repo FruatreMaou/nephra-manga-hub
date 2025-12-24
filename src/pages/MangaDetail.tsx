@@ -1,24 +1,36 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Star, BookOpen, User, Calendar, Clock, Tag, Bookmark, BookmarkCheck, ChevronRight } from 'lucide-react';
+import { Star, BookOpen, User, Calendar, Clock, Tag, Bookmark, BookmarkCheck, ChevronRight, CheckCircle2 } from 'lucide-react';
 import { getMangaDetail, getTypeBadgeClass, cleanChapterTitle } from '@/lib/api';
 import { MangaDetail as MangaDetailType } from '@/types/manga';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useBookmarks } from '@/hooks/useBookmarks';
+import { useReadingHistory } from '@/hooks/useReadingHistory';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+
+interface ChapterProgress {
+  chapter_slug: string;
+  scroll_progress: number;
+  last_image_index: number;
+}
+
+const LOCAL_STORAGE_KEY = 'nephra-reading-progress';
 
 const MangaDetail = () => {
   const { slug } = useParams<{ slug: string }>();
   const { user } = useAuth();
   const { toast } = useToast();
   const { isBookmarked, addBookmark, removeBookmark } = useBookmarks();
+  const { history } = useReadingHistory();
   
   const [manga, setManga] = useState<MangaDetailType | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAllChapters, setShowAllChapters] = useState(false);
+  const [chapterProgress, setChapterProgress] = useState<Record<string, ChapterProgress>>({});
 
   useEffect(() => {
     const fetchManga = async () => {
@@ -39,6 +51,59 @@ const MangaDetail = () => {
 
     fetchManga();
   }, [slug]);
+
+  // Fetch reading progress for chapters
+  useEffect(() => {
+    const fetchProgress = async () => {
+      if (!manga || manga.chapters.length === 0) return;
+
+      const chapterSlugs = manga.chapters.map(ch => ch.slug);
+
+      if (user) {
+        // Fetch from Supabase
+        const { data, error } = await supabase
+          .from('reading_history')
+          .select('chapter_slug, scroll_progress, last_image_index')
+          .eq('user_id', user.id)
+          .in('chapter_slug', chapterSlugs);
+
+        if (!error && data) {
+          const progressMap: Record<string, ChapterProgress> = {};
+          data.forEach(item => {
+            progressMap[item.chapter_slug] = {
+              chapter_slug: item.chapter_slug,
+              scroll_progress: item.scroll_progress || 0,
+              last_image_index: item.last_image_index || 0,
+            };
+          });
+          setChapterProgress(progressMap);
+        }
+      } else {
+        // Fetch from local storage
+        try {
+          const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
+          if (stored) {
+            const allProgress = JSON.parse(stored);
+            const progressMap: Record<string, ChapterProgress> = {};
+            chapterSlugs.forEach(slug => {
+              if (allProgress[slug]) {
+                progressMap[slug] = {
+                  chapter_slug: slug,
+                  scroll_progress: allProgress[slug].scrollProgress || 0,
+                  last_image_index: allProgress[slug].lastImageIndex || 0,
+                };
+              }
+            });
+            setChapterProgress(progressMap);
+          }
+        } catch {
+          // Ignore errors
+        }
+      }
+    };
+
+    fetchProgress();
+  }, [manga, user]);
 
   const handleBookmarkToggle = async () => {
     if (!user) {
@@ -61,6 +126,13 @@ const MangaDetail = () => {
     } else {
       await addBookmark(slug, manga.title, manga.image);
     }
+  };
+
+  // Find last read chapter
+  const lastReadChapter = history.find(h => h.manga_slug === slug);
+
+  const getProgressForChapter = (chapterSlug: string) => {
+    return chapterProgress[chapterSlug];
   };
 
   const displayedChapters = showAllChapters 
@@ -130,14 +202,14 @@ const MangaDetail = () => {
             {/* Info */}
             <div className="flex-1">
               <div className="flex items-start gap-3 mb-4">
-                <span className={getTypeBadgeClass(manga.type)}>
+                <span className={`type-badge ${getTypeBadgeClass(manga.type)}`}>
                   {manga.type}
                 </span>
                 {manga.status && (
-                  <span className={`px-2 py-0.5 text-xs font-semibold rounded ${
+                  <span className={`type-badge ${
                     manga.status.toLowerCase() === 'ongoing' 
-                      ? 'bg-secondary text-secondary-foreground' 
-                      : 'bg-green-500/20 text-green-400'
+                      ? 'bg-secondary/80 text-secondary-foreground border-secondary' 
+                      : 'bg-green-500/15 text-green-400 border-green-500/20'
                   }`}>
                     {manga.status}
                   </span>
@@ -209,14 +281,21 @@ const MangaDetail = () => {
 
               {/* Action Buttons */}
               <div className="flex flex-wrap items-center gap-3">
-                {manga.chapters.length > 0 && (
+                {lastReadChapter ? (
+                  <Link to={`/chapter/${lastReadChapter.chapter_slug}`}>
+                    <Button className="btn-cosmic">
+                      <BookOpen className="w-4 h-4 mr-2" />
+                      Continue Reading
+                    </Button>
+                  </Link>
+                ) : manga.chapters.length > 0 ? (
                   <Link to={`/chapter/${manga.chapters[manga.chapters.length - 1].slug}`}>
                     <Button className="btn-cosmic">
                       <BookOpen className="w-4 h-4 mr-2" />
                       Start Reading
                     </Button>
                   </Link>
-                )}
+                ) : null}
                 <Button
                   variant="outline"
                   onClick={handleBookmarkToggle}
@@ -249,24 +328,47 @@ const MangaDetail = () => {
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-96 overflow-y-auto pr-2">
-            {displayedChapters?.map((chapter) => (
-              <Link
-                key={chapter.slug}
-                to={`/chapter/${chapter.slug}`}
-                className="chapter-item flex items-center justify-between group"
-              >
-                <span className="font-medium group-hover:text-primary transition-colors">
-                  {cleanChapterTitle(chapter.title)}
-                </span>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  {chapter.date && (
-                    <span className="text-xs">{chapter.date}</span>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
+            {displayedChapters?.map((chapter) => {
+              const progress = getProgressForChapter(chapter.slug);
+              const isRead = progress && progress.scroll_progress >= 95;
+              const isInProgress = progress && progress.scroll_progress > 0 && progress.scroll_progress < 95;
+              
+              return (
+                <Link
+                  key={chapter.slug}
+                  to={`/chapter/${chapter.slug}`}
+                  className="chapter-item flex items-center justify-between group relative overflow-hidden"
+                >
+                  {/* Progress bar background */}
+                  {isInProgress && (
+                    <div 
+                      className="absolute left-0 top-0 bottom-0 bg-primary/10 transition-all"
+                      style={{ width: `${progress.scroll_progress}%` }}
+                    />
                   )}
-                  <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-                </div>
-              </Link>
-            ))}
+                  
+                  <div className="flex items-center gap-2 relative z-10">
+                    {isRead ? (
+                      <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
+                    ) : isInProgress ? (
+                      <div className="w-4 h-4 rounded-full border-2 border-primary flex items-center justify-center flex-shrink-0">
+                        <span className="text-[8px] font-bold text-primary">{Math.round(progress.scroll_progress)}</span>
+                      </div>
+                    ) : null}
+                    <span className={`font-medium group-hover:text-primary transition-colors ${isRead ? 'text-muted-foreground' : ''}`}>
+                      {cleanChapterTitle(chapter.title)}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 text-muted-foreground relative z-10">
+                    {chapter.date && (
+                      <span className="text-xs">{chapter.date}</span>
+                    )}
+                    <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
+                </Link>
+              );
+            })}
           </div>
 
           {manga.chapters.length > 20 && !showAllChapters && (

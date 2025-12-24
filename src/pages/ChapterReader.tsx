@@ -168,7 +168,7 @@ const ChapterReader = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen pt-20 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="text-muted-foreground">Loading chapter...</p>
@@ -179,7 +179,7 @@ const ChapterReader = () => {
 
   if (error || !chapter) {
     return (
-      <div className="min-h-screen pt-20 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <p className="text-muted-foreground mb-4">{error || 'Chapter not found'}</p>
           <Link to="/browse">
@@ -211,21 +211,51 @@ const ChapterReader = () => {
           </Button>
         </div>
       )}
+
+      {/* Minimal Top Navigation */}
+      <div 
+        className={`fixed top-0 left-0 right-0 z-40 glass border-b border-border/50 transition-transform duration-300 ${
+          showControls ? 'translate-y-0' : '-translate-y-full'
+        }`}
+      >
+        <div className="container mx-auto px-4 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {/* Chapter List Sheet */}
+            <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+              <SheetTrigger asChild>
+                <button className="p-2 rounded-lg hover:bg-muted/50 transition-colors">
+                  <List className="w-5 h-5" />
+                </button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-80 p-0">
+                <SheetHeader className="p-4 border-b border-border">
+                  <SheetTitle className="text-left text-sm">Chapters</SheetTitle>
+                </SheetHeader>
                 
-                {/* Back to Detail Link */}
-                {chapter.mangaSlug && (
+                {/* Navigation Links */}
+                <div className="border-b border-border">
                   <Link 
-                    to={`/manga/${chapter.mangaSlug}`}
-                    className="flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors border-b border-border"
+                    to="/"
+                    className="flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors text-sm"
                     onClick={() => setSheetOpen(false)}
                   >
-                    <ArrowLeft className="w-4 h-4" />
-                    <span className="font-medium">Back to Detail</span>
+                    <Home className="w-4 h-4" />
+                    <span>Home</span>
                   </Link>
-                )}
+                  {chapter.mangaSlug && (
+                    <Link 
+                      to={`/manga/${chapter.mangaSlug}`}
+                      className="flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors text-sm"
+                      onClick={() => setSheetOpen(false)}
+                    >
+                      <ArrowLeft className="w-4 h-4" />
+                      <span>Back to Detail</span>
+                    </Link>
+                  )}
+                </div>
                 
                 {/* Chapter List */}
-                <ScrollArea className="h-[calc(100vh-120px)]">
+                <ScrollArea className="h-[calc(100vh-160px)]">
                   <div className="p-2">
                     {mangaDetail?.chapters.map((ch) => (
                       <Link
@@ -256,11 +286,11 @@ const ChapterReader = () => {
             </Sheet>
           </div>
 
-          <h1 className="font-display text-sm md:text-base font-semibold truncate max-w-xs md:max-w-md">
+          <h1 className="font-display text-sm font-semibold truncate max-w-[200px] md:max-w-md text-center flex-1">
             {chapter.title}
           </h1>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <Button
               variant="ghost"
               size="sm"
@@ -276,7 +306,7 @@ const ChapterReader = () => {
       {/* Chapter Images */}
       <div 
         ref={contentRef}
-        className="pt-20 pb-20"
+        className="pt-14 pb-16"
         onClick={() => setShowControls(!showControls)}
       >
         <div className="max-w-4xl mx-auto">
@@ -305,23 +335,23 @@ const ChapterReader = () => {
           showControls ? 'translate-y-0' : 'translate-y-full'
         }`}
       >
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+        <div className="container mx-auto px-4 h-14 flex items-center justify-between">
           {chapter.prevChapter ? (
             <Link to={`/chapter/${chapter.prevChapter}`}>
               <Button variant="outline" size="sm" className="flex items-center gap-2">
                 <ChevronLeft className="w-4 h-4" />
-                <span className="hidden sm:inline">Previous</span>
+                <span className="hidden sm:inline">Prev</span>
               </Button>
             </Link>
           ) : (
             <Button variant="outline" size="sm" disabled className="flex items-center gap-2">
               <ChevronLeft className="w-4 h-4" />
-              <span className="hidden sm:inline">Previous</span>
+              <span className="hidden sm:inline">Prev</span>
             </Button>
           )}
 
-          <span className="text-sm text-muted-foreground">
-            {Math.round(scrollProgress)}% read
+          <span className="text-xs text-muted-foreground">
+            {Math.round(scrollProgress)}%
           </span>
 
           {chapter.nextChapter ? (
