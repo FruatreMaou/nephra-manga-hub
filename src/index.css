@@ -292,16 +292,20 @@
    Badge Variants
    ========================================== */
 
+.type-badge {
+  @apply px-2.5 py-1 text-xs font-bold uppercase tracking-wider rounded-md border;
+}
+
 .badge-manga {
-  @apply bg-primary/15 text-primary border border-primary/20;
+  @apply bg-primary/15 text-primary border-primary/30;
 }
 
 .badge-manhwa {
-  @apply bg-accent/15 text-accent border border-accent/20;
+  @apply bg-accent/15 text-accent border-accent/30;
 }
 
 .badge-manhua {
-  @apply bg-secondary text-secondary-foreground border border-border;
+  @apply bg-secondary/80 text-secondary-foreground border-secondary;
 }
 
 .badge-score {

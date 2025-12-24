@@ -25,7 +25,7 @@ export function MangaCard({ manga, index = 0 }: MangaCardProps) {
         
         {/* Type Badge */}
         <div className="absolute top-2 left-2 z-10">
-          <span className={getTypeBadgeClass(manga.type)}>
+          <span className={`type-badge ${getTypeBadgeClass(manga.type)}`}>
             {manga.type}
           </span>
         </div>
