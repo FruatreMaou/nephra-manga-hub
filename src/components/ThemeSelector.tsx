@@ -17,6 +17,11 @@ const themeColors: Record<Theme, { primary: string; bg: string; accent: string }
     bg: 'bg-stone-800',
     accent: 'bg-orange-400',
   },
+  flora: {
+    primary: 'bg-emerald-500',
+    bg: 'bg-stone-100',
+    accent: 'bg-teal-400',
+  },
 };
 
 export const ThemeSelector = () => {
