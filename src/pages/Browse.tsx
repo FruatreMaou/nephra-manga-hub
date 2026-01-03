@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Compass, TrendingUp, CheckCircle, Clock, Grid, Filter, ChevronDown } from 'lucide-react';
+import { Compass, TrendingUp, Clock, Layers, Filter, ChevronDown, CheckCircle, RefreshCw } from 'lucide-react';
 import { 
   getLatestReleases, 
   getPopularManga, 
@@ -23,16 +23,21 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-type StatusFilter = 'latest' | 'popular' | 'completed' | 'ongoing' | 'projects';
+type SectionFilter = 'latest' | 'popular' | 'projects';
+type StatusFilter = 'all' | 'completed' | 'ongoing';
 type TypeFilter = 'all' | 'manga' | 'manhwa' | 'manhua';
 
-const statusConfig: Record<StatusFilter, { label: string; icon: typeof Compass; fetcher: (page: number) => Promise<PaginatedResponse<MangaItem>> }> = {
+const sectionConfig: Record<SectionFilter, { label: string; icon: typeof Compass; fetcher: (page: number) => Promise<PaginatedResponse<MangaItem>> }> = {
   latest: { label: 'Latest', icon: Clock, fetcher: getLatestReleases },
   popular: { label: 'Popular', icon: TrendingUp, fetcher: getPopularManga },
-  completed: { label: 'Completed', icon: CheckCircle, fetcher: getCompletedManga },
-  ongoing: { label: 'Ongoing', icon: Grid, fetcher: getOngoingManga },
-  projects: { label: 'Projects', icon: Compass, fetcher: getProjects },
+  projects: { label: 'Projects', icon: Layers, fetcher: getProjects },
 };
+
+const statusFilters: { value: StatusFilter; label: string; icon: typeof CheckCircle }[] = [
+  { value: 'all', label: 'All Status', icon: Filter },
+  { value: 'completed', label: 'Completed', icon: CheckCircle },
+  { value: 'ongoing', label: 'Ongoing', icon: RefreshCw },
+];
 
 const typeFilters: { value: TypeFilter; label: string }[] = [
   { value: 'all', label: 'All Types' },
@@ -43,7 +48,8 @@ const typeFilters: { value: TypeFilter; label: string }[] = [
 
 const Browse = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const status = (searchParams.get('status') as StatusFilter) || 'latest';
+  const section = (searchParams.get('section') as SectionFilter) || 'latest';
+  const statusFilter = (searchParams.get('status') as StatusFilter) || 'all';
   const page = parseInt(searchParams.get('page') || '1', 10);
   const typeFilter = (searchParams.get('type') as TypeFilter) || 'all';
   const genreFilter = searchParams.get('genre') || '';
@@ -68,9 +74,16 @@ const Browse = () => {
         if (genreFilter) {
           // Fetch by genre
           result = await getMangaByGenre(genreFilter, page);
+        } else if (statusFilter !== 'all') {
+          // Fetch by status (completed/ongoing)
+          if (statusFilter === 'completed') {
+            result = await getCompletedManga(page);
+          } else {
+            result = await getOngoingManga(page);
+          }
         } else {
-          // Fetch by status
-          const config = statusConfig[status];
+          // Fetch by section
+          const config = sectionConfig[section];
           result = await config.fetcher(page);
         }
         
@@ -94,47 +107,65 @@ const Browse = () => {
     };
 
     fetchData();
-  }, [status, page, typeFilter, genreFilter]);
+  }, [section, statusFilter, page, typeFilter, genreFilter]);
+
+  const handleSectionChange = (newSection: SectionFilter) => {
+    setSearchParams({ section: newSection, page: '1', type: typeFilter, status: 'all' });
+  };
 
   const handleStatusChange = (newStatus: StatusFilter) => {
-    setSearchParams({ status: newStatus, page: '1', type: typeFilter });
+    const params: Record<string, string> = { section, page: '1', type: typeFilter, status: newStatus };
+    if (genreFilter) params.genre = genreFilter;
+    setSearchParams(params);
   };
 
   const handleTypeChange = (newType: TypeFilter) => {
-    const params: Record<string, string> = { status, page: '1', type: newType };
+    const params: Record<string, string> = { section, page: '1', type: newType, status: statusFilter };
     if (genreFilter) params.genre = genreFilter;
     setSearchParams(params);
   };
 
   const handleGenreChange = (genreSlug: string) => {
     if (genreSlug) {
-      setSearchParams({ genre: genreSlug, page: '1', type: typeFilter });
+      setSearchParams({ genre: genreSlug, page: '1', type: typeFilter, status: statusFilter, section });
     } else {
-      setSearchParams({ status, page: '1', type: typeFilter });
+      setSearchParams({ section, page: '1', type: typeFilter, status: statusFilter });
     }
   };
 
   const handlePageChange = (newPage: number) => {
-    const params: Record<string, string> = { page: newPage.toString(), type: typeFilter };
+    const params: Record<string, string> = { page: newPage.toString(), type: typeFilter, status: statusFilter, section };
     if (genreFilter) {
       params.genre = genreFilter;
-    } else {
-      params.status = status;
     }
     setSearchParams(params);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const clearFilters = () => {
-    setSearchParams({ status: 'latest', page: '1' });
+    setSearchParams({ section: 'latest', page: '1' });
   };
 
-  const config = genreFilter 
-    ? { label: genres.find(g => g.slug === genreFilter)?.title || 'Genre', icon: Filter }
-    : statusConfig[status];
-  const Icon = config.icon;
+  const getActiveLabel = () => {
+    if (genreFilter) {
+      return genres.find(g => g.slug === genreFilter)?.title || 'Genre';
+    }
+    if (statusFilter !== 'all') {
+      return statusFilters.find(s => s.value === statusFilter)?.label || 'Status';
+    }
+    return sectionConfig[section].label;
+  };
 
-  const hasActiveFilters = typeFilter !== 'all' || genreFilter;
+  const getActiveIcon = () => {
+    if (genreFilter) return Filter;
+    if (statusFilter !== 'all') {
+      return statusFilters.find(s => s.value === statusFilter)?.icon || Filter;
+    }
+    return sectionConfig[section].icon;
+  };
+
+  const Icon = getActiveIcon();
+  const hasActiveFilters = typeFilter !== 'all' || genreFilter || statusFilter !== 'all';
 
   return (
     <div className="min-h-screen pt-20">
@@ -153,18 +184,18 @@ const Browse = () => {
 
         {/* Filters Section */}
         <div className="space-y-4 mb-8">
-          {/* Status Filter Tabs */}
+          {/* Section Filter Tabs */}
           <div className="flex flex-wrap items-center gap-2">
-            {(Object.keys(statusConfig) as StatusFilter[]).map((key) => {
-              const conf = statusConfig[key];
+            {(Object.keys(sectionConfig) as SectionFilter[]).map((key) => {
+              const conf = sectionConfig[key];
               const IconComponent = conf.icon;
-              const isActive = !genreFilter && status === key;
+              const isActive = !genreFilter && statusFilter === 'all' && section === key;
               return (
                 <Button
                   key={key}
                   variant="outline"
                   size="sm"
-                  onClick={() => handleStatusChange(key)}
+                  onClick={() => handleSectionChange(key)}
                   className={`flex items-center gap-2 ${
                     isActive 
                       ? 'filter-active' 
@@ -180,6 +211,35 @@ const Browse = () => {
 
           {/* Additional Filters Row */}
           <div className="flex flex-wrap items-center gap-3">
+            {/* Status Filter Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className={`flex items-center gap-2 ${statusFilter !== 'all' ? 'border-primary/50 text-primary' : ''}`}
+                >
+                  {statusFilter === 'completed' ? <CheckCircle className="w-4 h-4" /> : 
+                   statusFilter === 'ongoing' ? <RefreshCw className="w-4 h-4" /> : 
+                   <Filter className="w-4 h-4" />}
+                  {statusFilters.find(s => s.value === statusFilter)?.label}
+                  <ChevronDown className="w-3 h-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="glass">
+                {statusFilters.map((status) => (
+                  <DropdownMenuItem 
+                    key={status.value}
+                    onClick={() => handleStatusChange(status.value)}
+                    className={statusFilter === status.value ? 'bg-primary/10 text-primary' : ''}
+                  >
+                    <status.icon className="w-4 h-4 mr-2" />
+                    {status.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             {/* Type Filter Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -188,7 +248,7 @@ const Browse = () => {
                   size="sm"
                   className={`flex items-center gap-2 ${typeFilter !== 'all' ? 'border-primary/50 text-primary' : ''}`}
                 >
-                  <Filter className="w-4 h-4" />
+                  <Layers className="w-4 h-4" />
                   {typeFilters.find(t => t.value === typeFilter)?.label}
                   <ChevronDown className="w-3 h-3" />
                 </Button>
@@ -257,7 +317,7 @@ const Browse = () => {
 
         {/* Section Header */}
         <SectionHeader 
-          title={config.label} 
+          title={getActiveLabel()} 
           icon={<Icon className="w-5 h-5" />}
         />
 
