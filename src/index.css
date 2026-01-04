@@ -358,19 +358,33 @@
    ========================================== */
 
 .type-badge {
-  @apply px-2.5 py-1 text-xs font-bold uppercase tracking-wider rounded-md border;
+  @apply px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide rounded-full;
+  @apply backdrop-blur-sm transition-all duration-200;
+  letter-spacing: 0.05em;
 }
 
 .badge-manga {
-  @apply bg-primary/15 text-primary border-primary/30;
+  background: linear-gradient(135deg, hsl(var(--primary) / 0.2), hsl(var(--primary) / 0.1));
+  color: hsl(var(--primary));
+  box-shadow: 0 1px 4px hsl(var(--primary) / 0.15), inset 0 1px 0 hsl(var(--primary) / 0.1);
 }
 
 .badge-manhwa {
-  @apply bg-accent/15 text-accent border-accent/30;
+  background: linear-gradient(135deg, hsl(var(--accent) / 0.2), hsl(var(--accent) / 0.1));
+  color: hsl(var(--accent));
+  box-shadow: 0 1px 4px hsl(var(--accent) / 0.15), inset 0 1px 0 hsl(var(--accent) / 0.1);
 }
 
 .badge-manhua {
-  @apply bg-secondary/80 text-secondary-foreground border-secondary;
+  background: linear-gradient(135deg, hsl(160 50% 45% / 0.2), hsl(160 50% 45% / 0.1));
+  color: hsl(160 50% 55%);
+  box-shadow: 0 1px 4px hsl(160 50% 45% / 0.15), inset 0 1px 0 hsl(160 50% 45% / 0.1);
+}
+
+/* Hover effect for badges */
+.type-badge:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.1);
 }
 
 .badge-score {
