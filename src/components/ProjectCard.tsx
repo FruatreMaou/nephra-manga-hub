@@ -37,7 +37,7 @@ export function ProjectCard({ project, index = 0 }: ProjectCardProps) {
             >
               {project.title}
             </Link>
-            <span className={getTypeBadgeClass(project.type)}>
+            <span className={`type-badge ${getTypeBadgeClass(project.type)}`}>
               {project.type}
             </span>
           </div>
